@@ -1,0 +1,50 @@
+# data (never commit)
+data/
+models/
+results/
+logs/
+*.mhd
+*.raw
+*.nii
+*.nii.gz
+
+# learning materials (gitignored per project convention)
+learning/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+*.so
+*.dylib
+
+# environments
+.env
+.venv
+venv/
+env/
+.conda/
+*.lock
+
+# editors
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# jupyter
+.ipynb_checkpoints/
+**/.ipynb_checkpoints/
+
+# outputs
+*.onnx
+wandb/
+mlruns/

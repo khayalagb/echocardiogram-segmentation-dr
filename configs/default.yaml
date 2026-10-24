@@ -1,0 +1,51 @@
+data:
+  root: "data/CAMUS_public"         # path to CAMUS dataset root
+  image_size: [256, 256]
+  num_classes: 4                    # background + LV cavity + myocardium + left atrium
+  structures: ["background", "lv_cavity", "myocardium", "left_atrium"]
+  split_seed: 42
+  train_fraction: 0.70
+  val_fraction: 0.15
+  # test fraction is 1 - train - val
+
+model:
+  encoder: "resnet34"
+  encoder_weights: "imagenet"
+  in_channels: 1
+  num_classes: 4
+
+training:
+  seed: 42
+  epochs: 100
+  batch_size: 8
+  num_workers: 4
+  learning_rate: 1.0e-3
+  weight_decay: 1.0e-5
+  patience: 15                      # early stopping on val Dice
+  dice_weight: 0.5
+  ce_weight: 0.5
+
+augmentation:
+  rotation_limit: 15                # degrees
+  shift_limit: 0.1                  # fraction of image size
+  scale_limit: 0.1                  # fraction change from 1.0
+  gamma_limit: [70, 130]            # percentage range
+  brightness_limit: 0.1
+  noise_var_limit: [0.001, 0.005]   # Gaussian noise variance range
+
+evaluation:
+  bootstrap_n: 1000
+  bootstrap_seed: 42
+  onnx_rtol: 1.0e-4
+  onnx_atol: 1.0e-5
+
+uncertainty:
+  ensemble_size: 5
+  seeds: [42, 123, 456, 789, 1024]
+  coverage_steps: 20                # number of thresholds for risk-coverage curve
+
+output:
+  results_dir: "results"
+  models_dir: "models"
+  logs_dir: "logs"
+  manifest_path: "data/manifest.csv"
