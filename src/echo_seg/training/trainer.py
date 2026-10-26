@@ -92,19 +92,20 @@ def train(cfg: dict, run_name: str = "baseline") -> Path:
     )
     logger.info("Train: %d samples | Val: %d samples", len(train_ds), len(val_ds))
 
+    pin = device.type == "cuda"
     train_dl = DataLoader(
         train_ds,
         batch_size=cfg["training"]["batch_size"],
         shuffle=True,
         num_workers=cfg["training"]["num_workers"],
-        pin_memory=True,
+        pin_memory=pin,
     )
     val_dl = DataLoader(
         val_ds,
         batch_size=cfg["training"]["batch_size"],
         shuffle=False,
         num_workers=cfg["training"]["num_workers"],
-        pin_memory=True,
+        pin_memory=pin,
     )
 
     model_cfg = cfg["model"]

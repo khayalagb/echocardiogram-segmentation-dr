@@ -63,7 +63,8 @@ def run_evaluation(cfg: dict, checkpoint_path: str, split: str = "test") -> pd.D
         latencies.append(time.perf_counter() - t0)
 
         pred_np = logits.argmax(dim=1)[0].cpu().numpy()
-        spacing = (float(meta["spacing"][0]), float(meta["spacing"][1]))
+        sp = meta["spacing"]
+        spacing = (float(sp[0]), float(sp[1])) if len(sp) >= 2 else (float(sp[0]), float(sp[0]))
 
         row = {
             "patient_id": meta["patient_id"],

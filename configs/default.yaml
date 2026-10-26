@@ -1,5 +1,5 @@
 data:
-  root: "data/CAMUS_public"         # path to CAMUS dataset root
+  root: "data/CAMUS_public/database_nifti"  # path to CAMUS dataset root
   image_size: [256, 256]
   num_classes: 4                    # background + LV cavity + myocardium + left atrium
   structures: ["background", "lv_cavity", "myocardium", "left_atrium"]
