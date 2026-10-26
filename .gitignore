@@ -1,6 +1,8 @@
 # data (never commit)
 data/
 models/
+models.nosync/
+!models.nosync/.gitkeep
 results/
 logs/
 *.mhd
