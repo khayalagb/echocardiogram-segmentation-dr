@@ -10,7 +10,7 @@ import torch
 from torch.utils.data import DataLoader
 
 from echo_seg.data import CamusDataset, build_val_transform
-from echo_seg.evaluation.metrics import dice_score, hd95, bootstrap_ci
+from echo_seg.evaluation.metrics import bootstrap_ci, dice_score, hd95
 from echo_seg.models import build_model
 from echo_seg.utils import get_logger
 

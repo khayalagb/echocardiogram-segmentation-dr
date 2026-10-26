@@ -1,4 +1,4 @@
-from .metrics import dice_score, hd95, bootstrap_ci
 from .analysis import run_evaluation
+from .metrics import bootstrap_ci, dice_score, hd95
 
-__all__ = ["dice_score", "hd95", "bootstrap_ci", "run_evaluation"]
+__all__ = ["bootstrap_ci", "dice_score", "hd95", "run_evaluation"]

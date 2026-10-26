@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from echo_seg.evaluation.metrics import dice_score, hd95, bootstrap_ci
+from echo_seg.evaluation.metrics import bootstrap_ci, dice_score, hd95
 
 
 def test_dice_perfect():

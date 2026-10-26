@@ -7,14 +7,13 @@ import sys
 from pathlib import Path
 
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
 import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-from echo_seg.uncertainty import run_ensemble_evaluation, risk_coverage_curve
+from echo_seg.uncertainty import risk_coverage_curve, run_ensemble_evaluation
 from echo_seg.utils import get_logger
 
 

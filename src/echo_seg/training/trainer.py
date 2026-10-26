@@ -8,7 +8,7 @@ from pathlib import Path
 import numpy as np
 import segmentation_models_pytorch as smp
 import torch
-import torch.nn as nn
+from torch import nn
 from torch.utils.data import DataLoader
 
 from echo_seg.data import CamusDataset, build_train_transform, build_val_transform

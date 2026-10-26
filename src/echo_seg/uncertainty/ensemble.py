@@ -1,6 +1,6 @@
 """Deep ensemble inference, uncertainty scoring, and risk-coverage analysis."""
 
-from pathlib import Path
+import io
 
 import numpy as np
 import torch
@@ -29,7 +29,9 @@ class EnsemblePredictor:
             self.device = torch.device("cpu")
         self.models = []
         for path in checkpoint_paths:
-            ckpt = torch.load(path, map_location=self.device)
+            with open(path, "rb") as fh:
+                buf = io.BytesIO(fh.read())
+            ckpt = torch.load(buf, map_location=self.device, weights_only=False)
             cfg = ckpt["cfg"]
             m = build_model(
                 encoder=cfg["model"]["encoder"],
@@ -66,9 +68,9 @@ def run_ensemble_evaluation(cfg: dict, checkpoint_paths: list[str], split: str =
 
     Saves results/{split}_uncertainty.csv.
     """
-    import json
-    import pandas as pd
     from pathlib import Path as P
+
+    import pandas as pd
 
     logger = get_logger("ensemble", log_dir=cfg["output"]["logs_dir"])
     logger.info("Ensemble of %d members on split=%s", len(checkpoint_paths), split)
@@ -131,7 +133,7 @@ def risk_coverage_curve(
     coverages = np.linspace(1.0, 1.0 / n_steps, n_steps)
     risks = []
     for cov in coverages:
-        k = max(1, int(round(cov * len(order))))
+        k = max(1, round(cov * len(order)))
         kept = order[:k]
         risks.append(errors[kept].mean())
     return coverages, np.array(risks)

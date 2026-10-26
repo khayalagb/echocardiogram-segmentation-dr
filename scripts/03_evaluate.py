@@ -29,7 +29,7 @@ def main():
     if args.split == "test":
         logger.warning("Opening test split. Use this only after the final configuration is locked.")
 
-    df = run_evaluation(cfg, args.checkpoint, split=args.split)
+    run_evaluation(cfg, args.checkpoint, split=args.split)
     logger.info("Per-case results saved to %s/%s_per_case.csv", cfg["output"]["results_dir"], args.split)
 
 
