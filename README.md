@@ -6,13 +6,13 @@
 
 ## Results
 
-*(Populated after running `scripts/03_evaluate.py` on the test split.)*
+Bootstrap 95% CIs over 1 000 resamples (n=1 000 random seeds, patient-level test split).
 
 | Structure | Dice (95% CI) | HD95 mm (95% CI) |
 |-----------|--------------|-----------------|
-| LV cavity | — | — |
-| Myocardium | — | — |
-| Left atrium | — | — |
+| LV cavity | 0.933 (0.928–0.937) | 1.62 (1.49–1.73) |
+| Myocardium | 0.866 (0.860–0.872) | 1.78 (1.67–1.91) |
+| Left atrium | 0.886 (0.872–0.897) | 2.48 (2.21–2.78) |
 
 Risk-coverage curves and per-structure analysis: `results/test_risk_coverage.png`
 
