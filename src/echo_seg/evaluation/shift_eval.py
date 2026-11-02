@@ -3,11 +3,14 @@
 Six conditions:
   clean        — no modification (baseline reference)
   gain_high    — uniform over-gain (+50 %)
-  speckle      — multiplicative Rayleigh noise (physics-inspired)
+  speckle      — multiplicative Rayleigh noise; Rayleigh(σ=0.798) has mean≈1.0,
+                 std≈0.47 — this is a severe shift. Noise is spatially uncorrelated
+                 (i.i.d. per pixel), unlike physical speckle which is band-limited.
   blur         — anisotropic Gaussian PSF (axial σ=2, lateral σ=1)
   attenuation  — depth-linear gain ramp (1.2 → 0.5)
   low_res      — ×4 downsample/upsample  [held-out: NOT used in DR training]
 
+Severities are fixed; do not tune them after seeing DR arm results.
 All functions operate on (B, C, H, W) float32 tensors in [0, 1].
 """
 
@@ -54,7 +57,7 @@ def _attenuation(img: torch.Tensor) -> torch.Tensor:
 
 
 def _low_res(img: torch.Tensor) -> torch.Tensor:
-    # shortcut: factor=4 chosen empirically; increase if a coarser shift is needed
+    # factor fixed at 4 (64×64 effective resolution on 256×256 input); held-out condition
     h, w = img.shape[-2], img.shape[-1]
     down = F.avg_pool2d(img, 4)
     return F.interpolate(down, size=(h, w), mode="bilinear", align_corners=False)

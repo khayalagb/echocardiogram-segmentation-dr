@@ -50,3 +50,5 @@ env/
 *.onnx
 wandb/
 mlruns/
+.coverage
+htmlcov/
