@@ -4,19 +4,24 @@ Seven conditions:
   clean         — no modification (baseline reference)
   gain_high     — uniform over-gain (+50 %)
   speckle       — multiplicative Rayleigh noise; Rayleigh(σ=0.798) has mean≈1.0,
-                  std≈0.47 — severe shift; spatially uncorrelated (i.i.d. per pixel),
-                  unlike physical speckle which is band-limited.
+                  std≈0.52 — severe shift; spatially uncorrelated (i.i.d. per pixel).
   blur          — anisotropic Gaussian PSF (axial σ=2, lateral σ=1)
   attenuation   — depth-linear gain ramp (1.2 → 0.5)
   low_res       — ×4 downsample/upsample           [HELD-OUT: not in DR training]
   speckle_corr  — spatially correlated speckle      [HELD-OUT: not in DR training]
-                  Rayleigh noise smoothed with Gaussian (σ=4 px), renormalized to
-                  mean≈1.0. More realistic than i.i.d. speckle.
+                  Complex Gaussian envelope (σ=1.5 px), renormalized, then scaled to
+                  multiplier std≈0.30. Redesigned after seeing baseline-only val results
+                  (before any DR results): original σ=4 smoothing reduced std to 0.04,
+                  making it a near-no-op.
 
 Overlap with DR training augmentations: gain_high, speckle, blur, attenuation.
 Held-out (unplanned shifts): low_res, speckle_corr, CAMUS quality tiers.
 
-Severities are fixed before seeing any DR arm results; do not change them.
+Multiplier statistics (measured on 256×256, seed 42):
+  speckle:      mean=1.001, std=0.523
+  speckle_corr: mean=1.000, std=0.300 (calibrated)
+
+Severities are fixed after seeing baseline-only val results, before any DR results.
 All functions operate on (B, C, H, W) float32 tensors in [0, 1].
 """
 
@@ -71,11 +76,18 @@ def _low_res(img: torch.Tensor) -> torch.Tensor:
 
 def _speckle_corr(img: torch.Tensor) -> torch.Tensor:
     # Held-out: spatially correlated speckle (NOT used in DR training).
-    # Rayleigh noise smoothed with σ=4 px Gaussian, renormalized to mean≈1.
-    noise = np.random.rayleigh(scale=0.798, size=img.shape).astype(np.float32)
-    noise = gaussian_filter(noise, sigma=[0, 0, 4, 4])
-    noise = noise / (noise.mean() + 1e-8)  # renormalize to mean≈1
-    return (img * torch.from_numpy(noise).to(img.device)).clamp(0, 1)
+    # Complex Gaussian envelope with σ=1.5 px spatial correlation, scaled so
+    # multiplier std≈0.30 and mean≈1.0. Always positive (min ~0.43 empirically).
+    shape = img.shape
+    real = np.random.standard_normal(shape).astype(np.float32)
+    imag = np.random.standard_normal(shape).astype(np.float32)
+    real = gaussian_filter(real, sigma=[0, 0, 1.5, 1.5])
+    imag = gaussian_filter(imag, sigma=[0, 0, 1.5, 1.5])
+    envelope = np.sqrt(real ** 2 + imag ** 2)
+    envelope /= (envelope.mean() + 1e-8)          # mean ≈ 1
+    s = 0.30 / (envelope.std() + 1e-8)            # scale to std ≈ 0.30
+    multiplier = (1.0 + s * (envelope - 1.0)).astype(np.float32)
+    return (img * torch.from_numpy(multiplier).to(img.device)).clamp(0, 1)
 
 
 # Keys with [HELD-OUT] suffix in value are NOT used in DR training augmentation.

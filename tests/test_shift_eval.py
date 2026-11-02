@@ -62,6 +62,30 @@ def test_corruptions_differ_from_input(img):
         assert not torch.allclose(out, img), f"{name}: output identical to input"
 
 
+def test_speckle_corr_multiplier_stats(img):
+    """speckle_corr multiplier must have mean≈1, std≈0.30, and produce a visible shift."""
+    from echo_seg.evaluation.shift_eval import _speckle_corr
+    # Use a uniform image so multiplier = output / input exactly
+    uniform = torch.full_like(img, 0.5)
+    np.random.seed(42)
+    out = _speckle_corr(uniform)
+    multiplier = out / uniform
+    assert abs(multiplier.mean().item() - 1.0) < 0.05, "speckle_corr multiplier mean not ≈1"
+    assert abs(multiplier.std().item() - 0.30) < 0.05, "speckle_corr multiplier std not ≈0.30"
+    mae = (out - uniform).abs().mean().item()
+    assert mae > 0.05, f"speckle_corr MAE too small ({mae:.4f}): corruption is near-no-op"
+
+
+def test_speckle_multiplier_mean(img):
+    """speckle multiplier must have mean≈1 (Rayleigh σ=0.798 → mean≈1.0)."""
+    from echo_seg.evaluation.shift_eval import _speckle
+    uniform = torch.full_like(img, 0.5)
+    np.random.seed(42)
+    out = _speckle(uniform)
+    multiplier = out / uniform
+    assert abs(multiplier.mean().item() - 1.0) < 0.05, "speckle multiplier mean not ≈1"
+
+
 def test_held_out_not_in_dr_training():
     """low_res and speckle_corr must not appear in DR training augmentations."""
     assert CORRUPTIONS_HELD_OUT.isdisjoint(CORRUPTIONS_IN_DR_TRAINING)
