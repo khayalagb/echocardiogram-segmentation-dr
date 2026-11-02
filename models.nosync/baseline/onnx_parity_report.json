@@ -1,17 +1,17 @@
 {
-  "checkpoint": "models/baseline/best.pth",
-  "onnx_path": "models/baseline/best.onnx",
+  "checkpoint": "models.nosync/baseline/best.pth",
+  "onnx_path": "models.nosync/baseline/best.onnx",
   "n_parity_samples": 10,
-  "max_abs_error": 5.602836608886719e-06,
+  "max_abs_error": 1.239776611328125e-05,
   "rtol": 0.0001,
   "atol": 1e-05,
   "parity_passed": true,
   "pytorch_latency_ms": {
-    "mean": 67.34030010411516,
-    "p95": 80.93432515161112
+    "mean": 65.12386680005875,
+    "p95": 70.02651280081407
   },
   "onnxruntime_latency_ms": {
-    "mean": 53.5566916980315,
-    "p95": 61.41123750421684
+    "mean": 44.710733399733726,
+    "p95": 51.9996624995656
   }
 }
