@@ -2,6 +2,7 @@
 
 import json
 import time
+from collections.abc import Callable
 from pathlib import Path
 
 import numpy as np
@@ -17,11 +18,20 @@ from echo_seg.utils import get_logger
 STRUCTURES = {1: "lv_cavity", 2: "myocardium", 3: "left_atrium"}
 
 
-def run_evaluation(cfg: dict, checkpoint_path: str, split: str = "test") -> pd.DataFrame:
+def run_evaluation(
+    cfg: dict,
+    checkpoint_path: str,
+    split: str = "test",
+    corrupt_fn: Callable | None = None,
+    output_label: str | None = None,
+) -> pd.DataFrame:
     """Evaluate a checkpoint on *split*; return per-case metrics DataFrame.
 
-    Saves results/{split}_per_case.csv and results/{split}_summary.json.
+    corrupt_fn: optional image corruption applied at inference (tensor → tensor, (B,C,H,W)).
+    output_label: file-name prefix; defaults to split.
+    Saves results/{label}_per_case.csv and results/{label}_summary.json.
     """
+    label = output_label or split
     if torch.cuda.is_available():
         device = torch.device("cuda")
     elif torch.backends.mps.is_available():
@@ -57,6 +67,8 @@ def run_evaluation(cfg: dict, checkpoint_path: str, split: str = "test") -> pd.D
         mask_np = batch["mask"][0].numpy()
         meta = {k: v[0] if isinstance(v, (list, torch.Tensor)) else v for k, v in batch["meta"].items()}
 
+        if corrupt_fn is not None:
+            img = corrupt_fn(img)
         t0 = time.perf_counter()
         with torch.no_grad():
             logits = model(img)
@@ -80,10 +92,10 @@ def run_evaluation(cfg: dict, checkpoint_path: str, split: str = "test") -> pd.D
     df = pd.DataFrame(rows)
     results_dir = Path(cfg["output"]["results_dir"])
     results_dir.mkdir(parents=True, exist_ok=True)
-    df.to_csv(results_dir / f"{split}_per_case.csv", index=False)
+    df.to_csv(results_dir / f"{label}_per_case.csv", index=False)
 
     summary = _build_summary(df, cfg)
-    with open(results_dir / f"{split}_summary.json", "w") as f:
+    with open(results_dir / f"{label}_summary.json", "w") as f:
         json.dump(summary, f, indent=2)
 
     logger.info(
