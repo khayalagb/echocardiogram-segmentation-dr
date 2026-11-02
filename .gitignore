@@ -1,7 +1,7 @@
 # data (never commit)
-data/
-models/
-models.nosync/
+/data/
+/models/
+/models.nosync/
 !models.nosync/.gitkeep
 results/
 logs/
