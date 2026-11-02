@@ -1,10 +1,18 @@
-"""Tests for test-time corruption functions in shift_eval."""
+"""Tests for test-time corruption functions in shift_eval.
+
+Covers all seven conditions: shape, [0,1] range, determinism under fixed seed,
+identity of clean, and that every corruption changes the image.
+"""
 
 import numpy as np
 import pytest
 import torch
 
-from echo_seg.evaluation.shift_eval import CORRUPTIONS
+from echo_seg.evaluation.shift_eval import (
+    CORRUPTIONS,
+    CORRUPTIONS_HELD_OUT,
+    CORRUPTIONS_IN_DR_TRAINING,
+)
 
 
 @pytest.fixture()
@@ -52,3 +60,17 @@ def test_corruptions_differ_from_input(img):
         np.random.seed(42)
         out = fn(img)
         assert not torch.allclose(out, img), f"{name}: output identical to input"
+
+
+def test_held_out_not_in_dr_training():
+    """low_res and speckle_corr must not appear in DR training augmentations."""
+    assert CORRUPTIONS_HELD_OUT.isdisjoint(CORRUPTIONS_IN_DR_TRAINING)
+    assert "low_res" in CORRUPTIONS_HELD_OUT
+    assert "speckle_corr" in CORRUPTIONS_HELD_OUT
+
+
+def test_all_conditions_covered():
+    """Every key in CORRUPTIONS is classified as either DR-training or held-out (except clean)."""
+    non_clean = {k for k in CORRUPTIONS if k != "clean"}
+    classified = CORRUPTIONS_IN_DR_TRAINING | CORRUPTIONS_HELD_OUT
+    assert non_clean == classified, f"Unclassified: {non_clean - classified}"

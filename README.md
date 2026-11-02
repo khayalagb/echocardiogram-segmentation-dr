@@ -77,6 +77,92 @@ See `learning/RUNBOOK.md` for a step-by-step guide with expected outputs.
 pytest
 ```
 
+## Robustness to acquisition variability
+
+### Motivation
+
+Ultrasound images vary substantially across acquisitions: gain settings, depth, scanner frequency,
+and tissue properties all affect the intensity distribution. A model trained on a single centre may
+fail silently when any of these change. Standard augmentation (affine, gamma, Gaussian noise) does
+not systematically cover physics-driven shifts such as speckle, PSF blur, and depth attenuation.
+
+This section asks whether augmenting with physics-inspired appearance randomisation improves
+robustness to such shifts.
+
+### Method
+
+The baseline (trained with standard augmentation) is compared against a DR arm (trained with
+physics-inspired augmentation: Rayleigh speckle, anisotropic blur, depth-attenuation ramp,
+wider gain range). Both use the same architecture, seed, and 100-epoch budget.
+
+Seven test-time conditions are applied to the **held-out test split**:
+
+| Condition | In DR training | Description |
+|-----------|---------------|-------------|
+| clean | — | unmodified images |
+| gain\_high | yes | uniform ×1.5 gain, clipped |
+| speckle | yes | multiplicative Rayleigh noise (mean≈1, std≈0.47); spatially i.i.d. |
+| blur | yes | anisotropic Gaussian PSF (axial σ=2 px, lateral σ=1 px) |
+| attenuation | yes | depth-linear gain ramp (1.2 → 0.5) |
+| low\_res | **no** | ×4 downsample/upsample (64 px effective) |
+| speckle\_corr | **no** | Rayleigh noise smoothed (σ=4 px), renorm. to mean≈1 |
+
+`low_res` and `speckle_corr` are held out: they appear in neither arm's training augmentation.
+Any improvement there is not by construction. The CAMUS image-quality tiers (good/medium/poor)
+provide a further unplanned natural shift.
+
+### Results
+
+*Placeholder — fill in after runs complete.*
+
+| Condition | Baseline LV | DR LV | Baseline Myo | DR Myo | Baseline LA | DR LA |
+|-----------|-------------|-------|--------------|--------|-------------|-------|
+| clean | — | — | — | — | — | — |
+| gain\_high | — | — | — | — | — | — |
+| speckle | — | — | — | — | — | — |
+| blur | — | — | — | — | — | — |
+| attenuation | — | — | — | — | — | — |
+| **low\_res** | — | — | — | — | — | — |
+| **speckle\_corr** | — | — | — | — | — | — |
+
+Bootstrap 95% CIs are reported in `results/shift_baseline_test_summary.json` and
+`results/shift_dr_test_summary.json`.
+
+**Note on interpretation:** the baseline is already robust to most conditions. Blur, attenuation,
+and correlated speckle cause only minor degradation. Uncorrelated speckle (`speckle`) is the main
+weakness (Myo Dice drops ~0.10 on the val set). DR training is expected to reduce that gap for
+conditions it covers directly; `low_res` and `speckle_corr` are the honest generalization tests.
+
+### Reproducing the robustness study
+
+```bash
+# 1. Evaluate baseline across all shift conditions (val, then test once locked)
+python scripts/09_robustness.py \
+    --checkpoint models.nosync/baseline/best.pth \
+    --model-name baseline --split val
+
+# 2. Train DR arm (same seed and budget as baseline)
+python scripts/08_train_dr.py --config configs/dr.yaml --run-name dr
+
+# 3. Evaluate DR arm
+python scripts/09_robustness.py \
+    --checkpoint models.nosync/dr/best.pth \
+    --model-name dr --split val
+
+# 4. Open test split only once, after configuration is locked
+python scripts/09_robustness.py \
+    --checkpoint models.nosync/baseline/best.pth \
+    --model-name baseline --split test
+python scripts/09_robustness.py \
+    --checkpoint models.nosync/dr/best.pth \
+    --model-name dr --split test
+
+# 5. Explore results
+jupyter notebook notebooks/04_robustness_analysis.ipynb
+```
+
+---
+
 ## Limitations
 
 - Single dataset (one centre, one scanner vendor). Generalisation to other devices is not demonstrated.

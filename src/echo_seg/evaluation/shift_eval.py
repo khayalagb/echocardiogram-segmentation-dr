@@ -1,16 +1,22 @@
 """Test-time corruption functions and shifted robustness evaluation loop.
 
-Six conditions:
-  clean        — no modification (baseline reference)
-  gain_high    — uniform over-gain (+50 %)
-  speckle      — multiplicative Rayleigh noise; Rayleigh(σ=0.798) has mean≈1.0,
-                 std≈0.47 — this is a severe shift. Noise is spatially uncorrelated
-                 (i.i.d. per pixel), unlike physical speckle which is band-limited.
-  blur         — anisotropic Gaussian PSF (axial σ=2, lateral σ=1)
-  attenuation  — depth-linear gain ramp (1.2 → 0.5)
-  low_res      — ×4 downsample/upsample  [held-out: NOT used in DR training]
+Seven conditions:
+  clean         — no modification (baseline reference)
+  gain_high     — uniform over-gain (+50 %)
+  speckle       — multiplicative Rayleigh noise; Rayleigh(σ=0.798) has mean≈1.0,
+                  std≈0.47 — severe shift; spatially uncorrelated (i.i.d. per pixel),
+                  unlike physical speckle which is band-limited.
+  blur          — anisotropic Gaussian PSF (axial σ=2, lateral σ=1)
+  attenuation   — depth-linear gain ramp (1.2 → 0.5)
+  low_res       — ×4 downsample/upsample           [HELD-OUT: not in DR training]
+  speckle_corr  — spatially correlated speckle      [HELD-OUT: not in DR training]
+                  Rayleigh noise smoothed with Gaussian (σ=4 px), renormalized to
+                  mean≈1.0. More realistic than i.i.d. speckle.
 
-Severities are fixed; do not tune them after seeing DR arm results.
+Overlap with DR training augmentations: gain_high, speckle, blur, attenuation.
+Held-out (unplanned shifts): low_res, speckle_corr, CAMUS quality tiers.
+
+Severities are fixed before seeing any DR arm results; do not change them.
 All functions operate on (B, C, H, W) float32 tensors in [0, 1].
 """
 
@@ -39,7 +45,7 @@ def _gain_high(img: torch.Tensor) -> torch.Tensor:
 
 
 def _speckle(img: torch.Tensor) -> torch.Tensor:
-    # Rayleigh scale=0.798 → mean≈1.0; np global RNG must be seeded by caller
+    # Rayleigh(0.798) → mean≈1.0, std≈0.47; np global RNG seeded by caller
     noise = np.random.rayleigh(scale=0.798, size=img.shape).astype(np.float32)
     return (img * torch.from_numpy(noise).to(img.device)).clamp(0, 1)
 
@@ -63,14 +69,29 @@ def _low_res(img: torch.Tensor) -> torch.Tensor:
     return F.interpolate(down, size=(h, w), mode="bilinear", align_corners=False)
 
 
+def _speckle_corr(img: torch.Tensor) -> torch.Tensor:
+    # Held-out: spatially correlated speckle (NOT used in DR training).
+    # Rayleigh noise smoothed with σ=4 px Gaussian, renormalized to mean≈1.
+    noise = np.random.rayleigh(scale=0.798, size=img.shape).astype(np.float32)
+    noise = gaussian_filter(noise, sigma=[0, 0, 4, 4])
+    noise = noise / (noise.mean() + 1e-8)  # renormalize to mean≈1
+    return (img * torch.from_numpy(noise).to(img.device)).clamp(0, 1)
+
+
+# Keys with [HELD-OUT] suffix in value are NOT used in DR training augmentation.
 CORRUPTIONS: dict[str, Callable | None] = {
     "clean": None,
     "gain_high": _gain_high,
     "speckle": _speckle,
     "blur": _blur,
     "attenuation": _attenuation,
-    "low_res": _low_res,
+    "low_res": _low_res,           # held-out
+    "speckle_corr": _speckle_corr, # held-out
 }
+
+# Explicit sets for DR training overlap documentation
+CORRUPTIONS_IN_DR_TRAINING = frozenset({"gain_high", "speckle", "blur", "attenuation"})
+CORRUPTIONS_HELD_OUT = frozenset({"low_res", "speckle_corr"})
 
 
 # ---------------------------------------------------------------------------
@@ -81,14 +102,18 @@ def run_all_shifts(
     cfg: dict,
     checkpoint_path: str,
     split: str = "test",
+    model_name: str = "baseline",
     seed: int = 42,
 ) -> pd.DataFrame:
     """Run run_evaluation for every corruption condition.
 
-    Saves results/shift_{condition}_per_case.csv per condition and
-    results/shift_combined_per_case.csv + results/shift_summary.json overall.
-    Returns the combined per-case DataFrame (with a 'condition' column).
+    Output files are named shift_{model_name}_{split}_{condition}_per_case.csv
+    so multiple arms never overwrite each other.
+    Also saves shift_{model_name}_{split}_combined_per_case.csv and
+    shift_{model_name}_{split}_summary.json.
+    Returns the combined per-case DataFrame (with 'condition' and 'model' columns).
     """
+    prefix = f"shift_{model_name}_{split}"
     frames = []
     for name, fn in CORRUPTIONS.items():
         np.random.seed(seed)  # reproducible per-condition noise
@@ -97,17 +122,18 @@ def run_all_shifts(
             checkpoint_path,
             split=split,
             corrupt_fn=fn,
-            output_label=f"shift_{name}",
+            output_label=f"{prefix}_{name}",
         )
-        df.insert(0, "condition", name)
+        df.insert(0, "model", model_name)
+        df.insert(1, "condition", name)
         frames.append(df)
 
     combined = pd.concat(frames, ignore_index=True)
     results_dir = Path(cfg["output"]["results_dir"])
-    combined.to_csv(results_dir / "shift_combined_per_case.csv", index=False)
+    combined.to_csv(results_dir / f"{prefix}_combined_per_case.csv", index=False)
 
     summary = _build_shift_summary(combined, cfg)
-    with open(results_dir / "shift_summary.json", "w") as f:
+    with open(results_dir / f"{prefix}_summary.json", "w") as f:
         json.dump(summary, f, indent=2)
 
     return combined
