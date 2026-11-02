@@ -6,15 +6,17 @@
 
 ## Results
 
-Bootstrap 95% CIs over 1 000 resamples (n=1 000 random seeds, patient-level test split).
+Bootstrap 95% CIs over 1 000 resamples (patient-level test split, n=75 patients).
 
 | Structure | Dice (95% CI) | HD95 mm (95% CI) |
 |-----------|--------------|-----------------|
-| LV cavity | 0.933 (0.928–0.937) | 1.62 (1.49–1.73) |
-| Myocardium | 0.866 (0.860–0.872) | 1.78 (1.67–1.91) |
-| Left atrium | 0.886 (0.872–0.897) | 2.48 (2.21–2.78) |
+| LV cavity | 0.933 (0.929–0.938) | 1.65 (1.52–1.80) |
+| Myocardium | 0.874 (0.869–0.880) | 1.73 (1.61–1.87) |
+| Left atrium | 0.899 (0.889–0.908) | 2.16 (1.94–2.39) |
 
 Risk-coverage curves and per-structure analysis: `results/test_risk_coverage.png`
+
+**Provenance.** The baseline checkpoint dates from 28 Oct 2026; the reason for the retrain was not recorded. Val and test were both evaluated that day, before the robustness study. All robustness-study design decisions (corruptions, severities, DR ranges) were made using the validation split only.
 
 ## Setup
 
@@ -54,22 +56,24 @@ python scripts/01_prepare_split.py
 python scripts/02_train.py --run-name baseline
 
 # Evaluate on validation split (development)
-python scripts/03_evaluate.py --checkpoint models/baseline/best.pth --split val
+python scripts/03_evaluate.py --checkpoint models.nosync/baseline/best.pth --split val
 
-# Train remaining ensemble members
+# Train remaining ensemble members (see note below)
 python scripts/04_train_ensemble.py
 
-# Uncertainty analysis
+# Uncertainty analysis (see note below)
 python scripts/05_uncertainty.py
 
 # Evaluate on test split — open once, after configuration is locked
-python scripts/03_evaluate.py --checkpoint models/baseline/best.pth --split test
+python scripts/03_evaluate.py --checkpoint models.nosync/baseline/best.pth --split test
 
 # Export to ONNX + parity check
-python scripts/06_export_onnx.py --checkpoint models/baseline/best.pth
+python scripts/06_export_onnx.py --checkpoint models.nosync/baseline/best.pth
 ```
 
 See `learning/RUNBOOK.md` for a step-by-step guide with expected outputs.
+
+**Ensemble and uncertainty results** were produced from an Oct 26 training run. The ensemble checkpoint weights (`models.nosync/ensemble_0{0–4}/best.pth`) are no longer on disk and may predate the Oct 28 split re-run. Uncertainty results (`results/val_uncertainty.csv`, `results/test_uncertainty.csv`) do not exist. Re-run `04_train_ensemble.py` and `05_uncertainty.py` if needed.
 
 ## Tests
 
@@ -105,7 +109,7 @@ Seven test-time conditions are applied to the **held-out test split**:
 | blur | yes | anisotropic Gaussian PSF (axial σ=2 px, lateral σ=1 px) |
 | attenuation | yes | depth-linear gain ramp (1.2 → 0.5) |
 | low\_res | **no** | ×4 downsample/upsample (64 px effective) |
-| speckle\_corr | **no** | Rayleigh noise smoothed (σ=4 px), renorm. to mean≈1 |
+| speckle\_corr | **no** | spatially correlated speckle via complex Gaussian envelope (σ=1.5 px, multiplier std≈0.30) |
 
 `low_res` and `speckle_corr` are held out: they appear in neither arm's training augmentation.
 Any improvement there is not by construction. The CAMUS image-quality tiers (good/medium/poor)
@@ -128,10 +132,7 @@ provide a further unplanned natural shift.
 Bootstrap 95% CIs are reported in `results/shift_baseline_test_summary.json` and
 `results/shift_dr_test_summary.json`.
 
-**Note on interpretation:** the baseline is already robust to most conditions. Blur, attenuation,
-and correlated speckle cause only minor degradation. Uncorrelated speckle (`speckle`) is the main
-weakness (Myo Dice drops ~0.10 on the val set). DR training is expected to reduce that gap for
-conditions it covers directly; `low_res` and `speckle_corr` are the honest generalization tests.
+**Note on interpretation:** the baseline is robust to most conditions (blur, attenuation, low resolution, gain). Uncorrelated speckle (`speckle`) degrades Myo Dice by ~0.10 on the val set. Spatially-correlated speckle (`speckle_corr`) causes much larger drops (LA Dice −0.37 on val); this is a strong held-out challenge. DR training is expected to close the gap for conditions it covers directly; `low_res` and `speckle_corr` are the honest generalization tests.
 
 ### Reproducing the robustness study
 
