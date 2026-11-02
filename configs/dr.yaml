@@ -1,0 +1,67 @@
+# Domain-randomisation training arm (inherits all non-augmentation settings from default.yaml)
+# Run: python scripts/08_train_dr.py --config configs/dr.yaml --run-name dr
+
+data:
+  root: "data/CAMUS_public/database_nifti"
+  image_size: [256, 256]
+  num_classes: 4
+  structures: ["background", "lv_cavity", "myocardium", "left_atrium"]
+  split_seed: 42
+  train_fraction: 0.70
+  val_fraction: 0.15
+
+model:
+  encoder: "resnet34"
+  encoder_weights: "imagenet"
+  in_channels: 1
+  num_classes: 4
+
+training:
+  seed: 42                         # identical to baseline — fair comparison
+  epochs: 100
+  batch_size: 8
+  num_workers: 4
+  learning_rate: 1.0e-3
+  weight_decay: 1.0e-5
+  patience: 15
+  dice_weight: 0.5
+  ce_weight: 0.5
+
+# DR augmentation replaces the standard augmentation block.
+# Gaussian noise is removed; replaced by physics-inspired speckle, blur, attenuation.
+# Affine unchanged. Gamma and brightness ranges widened.
+#
+# Overlap with evaluation shift conditions:
+#   gain_high  (+50% flat): DR brightness ±0.20 → max +20%  → eval IS harder
+#   speckle    (std≈0.52) : DR s∈[0.1,0.8] → std∈[0.05,0.42] → eval IS harder
+#   blur       (axial σ=2): DR axial [0.5,2.0] → eval at the upper edge
+#   attenuation(1.2→0.5)  : DR top [1.0,1.3], bot [0.4,0.8] → eval WITHIN range
+#   low_res, speckle_corr : NOT in DR training (held-out)
+augmentation:
+  rotation_limit: 15
+  shift_limit: 0.1
+  scale_limit: 0.1
+  gamma_limit: [40, 160]
+  brightness_limit: 0.2
+  speckle_s_range: [0.1, 0.8]
+  blur_sigma_axial: [0.5, 2.0]
+  blur_sigma_lateral: [0.3, 1.0]
+  attenuation_top: [1.0, 1.3]
+  attenuation_bot: [0.4, 0.8]
+
+evaluation:
+  bootstrap_n: 1000
+  bootstrap_seed: 42
+  onnx_rtol: 1.0e-4
+  onnx_atol: 1.0e-5
+
+uncertainty:
+  ensemble_size: 5
+  seeds: [42, 123, 456, 789, 1024]
+  coverage_steps: 20
+
+output:
+  results_dir: "results"
+  models_dir: "models.nosync"
+  logs_dir: "logs"
+  manifest_path: "data/manifest.csv"
