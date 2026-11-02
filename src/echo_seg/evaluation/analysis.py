@@ -31,7 +31,7 @@ def run_evaluation(
     output_label: file-name prefix; defaults to split.
     Saves results/{label}_per_case.csv and results/{label}_summary.json.
     """
-    label = output_label or split
+    out_prefix = output_label or split
     if torch.cuda.is_available():
         device = torch.device("cuda")
     elif torch.backends.mps.is_available():
@@ -92,10 +92,10 @@ def run_evaluation(
     df = pd.DataFrame(rows)
     results_dir = Path(cfg["output"]["results_dir"])
     results_dir.mkdir(parents=True, exist_ok=True)
-    df.to_csv(results_dir / f"{label}_per_case.csv", index=False)
+    df.to_csv(results_dir / f"{out_prefix}_per_case.csv", index=False)
 
     summary = _build_summary(df, cfg)
-    with open(results_dir / f"{label}_summary.json", "w") as f:
+    with open(results_dir / f"{out_prefix}_summary.json", "w") as f:
         json.dump(summary, f, indent=2)
 
     logger.info(
