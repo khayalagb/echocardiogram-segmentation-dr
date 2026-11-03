@@ -198,11 +198,14 @@ python scripts/06_export_onnx.py --checkpoint models.nosync/dr/best.pth
 
 ### App screenshots
 
-![App landing page — sidebar and disclaimer](docs/screenshot_app_ui.png)
+<!-- uncomment after adding docs/screenshot_app_ui.png -->
+<!-- ![App landing page — sidebar and disclaimer](docs/screenshot_app_ui.png) -->
 
-![Speckle condition — baseline vs DR side by side](docs/screenshot_speckle.png)
+<!-- uncomment after adding docs/screenshot_speckle.png -->
+<!-- ![Speckle condition — baseline vs DR side by side](docs/screenshot_speckle.png) -->
 
-![Speckle-corr (held-out) — baseline drop and DR recovery](docs/screenshot_speckle_corr.png)
+<!-- uncomment after adding docs/screenshot_speckle_corr.png -->
+<!-- ![Speckle-corr (held-out) — baseline drop and DR recovery](docs/screenshot_speckle_corr.png) -->
 
 ## Limitations
 
