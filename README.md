@@ -19,11 +19,11 @@ Bootstrap 95% CIs over 1 000 resamples (patient-level test split, n=75 patients)
 ## Setup
 
 ```bash
-# 1. Create environment
-python -m venv .venv && source .venv/bin/activate
+# App only (also used by Streamlit Community Cloud)
+pip install -r requirements.txt
 
-# 2. Install (CPU-only torch for dev; use GPU wheel for training)
-pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121  # GPU
+# Full research environment (training, evaluation, notebooks)
+pip install -r requirements.txt -r requirements-dev.txt
 pip install -e ".[dev]"
 ```
 
@@ -206,6 +206,12 @@ python scripts/06_export_onnx.py --checkpoint models.nosync/dr/best.pth
 
 <!-- uncomment after adding docs/screenshot_speckle_corr.png -->
 <!-- ![Speckle-corr (held-out) — baseline drop and DR recovery](docs/screenshot_speckle_corr.png) -->
+
+## Deployment
+
+The app runs on [Streamlit Community Cloud](https://share.streamlit.io) directly from this repository. The bundled ONNX model files (`app_models/`) were trained on the CAMUS dataset (CC BY-NC-SA 4.0); any redistribution of this repository or its derivatives must be non-commercial and share-alike under the same licence. Cite the dataset as: Leclerc et al., "Deep Learning for Segmentation using an Open Large-Scale Dataset in 2D Echocardiography," IEEE TMI 38(9):2198–2210, 2019. doi:10.1109/TMI.2019.2900516.
+
+**Research demo only. Not for clinical use.** Uploaded images are processed in memory and not stored.
 
 ## Limitations
 
