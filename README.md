@@ -117,22 +117,37 @@ provide a further unplanned natural shift.
 
 ### Results
 
-*Placeholder — fill in after runs complete.*
+Mean Dice on the held-out test split. 95% CIs are patient-level bootstrap (1 000 resamples, patients
+resampled as units). CIs reflect test-case sampling; one training seed was used per arm.
 
 | Condition | Baseline LV | DR LV | Baseline Myo | DR Myo | Baseline LA | DR LA |
 |-----------|-------------|-------|--------------|--------|-------------|-------|
-| clean | — | — | — | — | — | — |
-| gain\_high | — | — | — | — | — | — |
-| speckle | — | — | — | — | — | — |
-| blur | — | — | — | — | — | — |
-| attenuation | — | — | — | — | — | — |
-| **low\_res** | — | — | — | — | — | — |
-| **speckle\_corr** | — | — | — | — | — | — |
+| clean | 0.933 (0.929–0.938) | 0.934 (0.930–0.939) | 0.874 (0.869–0.880) | 0.872 (0.866–0.878) | 0.899 (0.889–0.908) | 0.904 (0.895–0.912) |
+| gain\_high | 0.928 (0.923–0.932) | 0.932 (0.927–0.937) | 0.862 (0.855–0.869) | 0.865 (0.859–0.872) | 0.892 (0.881–0.902) | 0.901 (0.890–0.910) |
+| speckle | 0.870 (0.850–0.888) | 0.924 (0.917–0.930) | 0.768 (0.749–0.785) | 0.859 (0.852–0.865) | 0.778 (0.746–0.806) | 0.891 (0.879–0.902) |
+| blur | 0.930 (0.924–0.935) | 0.930 (0.924–0.936) | 0.866 (0.860–0.873) | 0.868 (0.861–0.874) | 0.893 (0.881–0.903) | 0.896 (0.885–0.907) |
+| attenuation | 0.932 (0.927–0.937) | 0.934 (0.930–0.939) | 0.873 (0.867–0.878) | 0.873 (0.867–0.879) | 0.898 (0.889–0.907) | 0.903 (0.894–0.911) |
+| **low\_res** | 0.918 (0.912–0.924) | 0.925 (0.917–0.932) | 0.854 (0.848–0.861) | 0.861 (0.853–0.868) | 0.892 (0.882–0.902) | 0.893 (0.881–0.905) |
+| **speckle\_corr** | 0.681 (0.649–0.710) | 0.887 (0.878–0.895) | 0.641 (0.616–0.663) | 0.786 (0.774–0.797) | 0.524 (0.484–0.564) | 0.826 (0.805–0.844) |
 
-Bootstrap 95% CIs are reported in `results/shift_baseline_test_summary.json` and
+Bold rows are held-out conditions (absent from both training augmentation sets). Full per-case CSVs
+and bootstrap draws are in `results/shift_baseline_test_summary.json` and
 `results/shift_dr_test_summary.json`.
 
-**Note on interpretation:** the baseline is robust to most conditions (blur, attenuation, low resolution, gain). Uncorrelated speckle (`speckle`) degrades Myo Dice by ~0.10 on the val set. Spatially-correlated speckle (`speckle_corr`) causes much larger drops (LA Dice −0.37 on val); this is a strong held-out challenge. DR training is expected to close the gap for conditions it covers directly; `low_res` and `speckle_corr` are the honest generalization tests.
+**Note on interpretation:** the baseline is robust to blur, attenuation, gain, and low-resolution
+conditions; differences versus the DR arm on those conditions are below 0.01 Dice and are not
+claimed here. Uncorrelated speckle (`speckle`) degrades the baseline substantially (LV −0.06,
+Myo −0.11, LA −0.12 versus clean); the DR augmentation set (Rayleigh speckle, anisotropic blur,
+depth-attenuation ramp, wider gain/gamma range) closes this gap. `speckle_corr` is spatially
+correlated speckle of similar amplitude, not used in training by either arm; the baseline drops
+sharply (LV −0.25, Myo −0.23, LA −0.37 versus clean) and the DR arm retains higher Dice on this
+condition (LV +0.21, Myo +0.14, LA +0.30). This result is not by construction, but the
+interpretation is limited by the factors below.
+
+**Limitations of this study:** corruptions are synthetic and applied to a single-centre dataset;
+no real cross-device images were used. One training seed was used per arm, so arm differences
+cannot be separated from run-to-run variance. Differences smaller than 0.01 Dice are not
+reported as findings.
 
 ### Reproducing the robustness study
 
