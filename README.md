@@ -196,6 +196,14 @@ python scripts/06_export_onnx.py --checkpoint models.nosync/dr/best.pth
 
 *Mean Dice on the held-out test split (75 patients). One illustrative example, not a typical case; averages are in the results table.*
 
+### App screenshots
+
+![App landing page — sidebar and disclaimer](docs/screenshot_app_ui.png)
+
+![Speckle condition — baseline vs DR side by side](docs/screenshot_speckle.png)
+
+![Speckle-corr (held-out) — baseline drop and DR recovery](docs/screenshot_speckle_corr.png)
+
 ## Limitations
 
 - Single dataset (one centre, one scanner vendor). Generalisation to other devices is not demonstrated.
