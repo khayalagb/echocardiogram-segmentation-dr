@@ -1,7 +1,11 @@
 """Streamlit demo: echocardiogram segmentation via ONNX inference."""
 
 import io
+import sys
 from pathlib import Path
+
+# make echo_seg importable without a full package install
+sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 import cv2
 import numpy as np
@@ -13,9 +17,10 @@ from PIL import Image
 from echo_seg.corruptions import CORRUPTIONS, CORRUPTIONS_HELD_OUT, CORRUPTIONS_IN_DR_TRAINING
 
 # ── constants ────────────────────────────────────────────────────────────────
+_HERE = Path(__file__).parent
 MODELS = {
-    "Baseline": Path("models/baseline/best.onnx"),
-    "DR": Path("models/dr/best.onnx"),
+    "Baseline": _HERE / "app_models" / "baseline.onnx",
+    "DR":       _HERE / "app_models" / "dr.onnx",
 }
 IMAGE_SIZE = (256, 256)
 
@@ -107,7 +112,6 @@ def dice_score(pred: np.ndarray, gt: np.ndarray, label: int) -> float | None:
 # ── page ─────────────────────────────────────────────────────────────────────
 st.set_page_config(page_title="Echo segmentation", layout="wide")
 st.title("Echocardiogram segmentation")
-st.caption("ResNet34 U-Net · CAMUS dataset · ONNX Runtime inference")
 st.warning(
     "Research demo only. Not for clinical use. Do not upload identifiable patient data.",
     icon=":material/warning:",
@@ -227,3 +231,10 @@ for label_idx, (name, _) in STRUCTURES.items():
 
 if gt_mask is None:
     st.caption("Showing pixel coverage. Upload a ground-truth mask PNG to compute Dice.")
+
+st.divider()
+st.caption(
+    "Research demo only · Non-commercial use (CC BY-NC-SA 4.0, models trained on CAMUS) · "
+    "Not for clinical use · Uploads processed in memory and not stored · "
+    "Cite: Leclerc et al., IEEE TMI 38(9):2198–2210, 2019. doi:10.1109/TMI.2019.2900516"
+)
