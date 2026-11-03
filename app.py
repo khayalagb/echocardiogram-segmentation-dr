@@ -3,6 +3,7 @@
 import io
 from pathlib import Path
 
+import cv2
 import numpy as np
 import onnxruntime as ort
 import streamlit as st
@@ -52,13 +53,14 @@ def load_session(path: Path) -> ort.InferenceSession:
 
 
 def preprocess(gray: np.ndarray) -> np.ndarray:
-    # Normalise at original resolution first, then resize — matches dataset.py order.
+    # Normalise at original resolution first (matches dataset.py order), then resize
+    # with cv2.INTER_LINEAR — same interpolation as albumentations A.Resize used in training.
     arr = gray.astype(np.float32)
     lo, hi = arr.min(), arr.max()
     if hi > lo:
         arr = (arr - lo) / (hi - lo)
-    pil = Image.fromarray(arr, mode="F").resize(IMAGE_SIZE, Image.BILINEAR)
-    return np.array(pil, dtype=np.float32)[np.newaxis, np.newaxis]  # (1,1,256,256)
+    resized = cv2.resize(arr, IMAGE_SIZE, interpolation=cv2.INTER_LINEAR)
+    return resized[np.newaxis, np.newaxis]  # (1,1,256,256)
 
 
 def apply_corruption(arr_01: np.ndarray, condition: str) -> np.ndarray:
