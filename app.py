@@ -52,12 +52,13 @@ def load_session(path: Path) -> ort.InferenceSession:
 
 
 def preprocess(gray: np.ndarray) -> np.ndarray:
-    pil = Image.fromarray(gray).resize(IMAGE_SIZE, Image.BILINEAR)
-    arr = np.array(pil, dtype=np.float32)
+    # Normalise at original resolution first, then resize — matches dataset.py order.
+    arr = gray.astype(np.float32)
     lo, hi = arr.min(), arr.max()
     if hi > lo:
         arr = (arr - lo) / (hi - lo)
-    return arr[np.newaxis, np.newaxis]  # (1,1,256,256)
+    pil = Image.fromarray(arr, mode="F").resize(IMAGE_SIZE, Image.BILINEAR)
+    return np.array(pil, dtype=np.float32)[np.newaxis, np.newaxis]  # (1,1,256,256)
 
 
 def apply_corruption(arr_01: np.ndarray, condition: str) -> np.ndarray:
@@ -194,23 +195,15 @@ col_input, col_baseline, col_dr = st.columns(3)
 with col_input:
     label = f"Input ({CORRUPTION_LABELS[corruption_key]})"
     st.subheader(label)
-    st.image(gray_corrupt, width="stretch", alt=label)
+    st.image(gray_corrupt, width="stretch")
 
 with col_baseline:
     st.subheader("Baseline")
-    st.image(
-        make_overlay(gray_corrupt, mask_baseline),
-        width="stretch",
-        alt="Baseline segmentation overlay",
-    )
+    st.image(make_overlay(gray_corrupt, mask_baseline), width="stretch")
 
 with col_dr:
     st.subheader("DR")
-    st.image(
-        make_overlay(gray_corrupt, mask_dr),
-        width="stretch",
-        alt="DR segmentation overlay",
-    )
+    st.image(make_overlay(gray_corrupt, mask_dr), width="stretch")
 
 # ── metrics ───────────────────────────────────────────────────────────────────
 st.subheader("Per-structure metrics")
