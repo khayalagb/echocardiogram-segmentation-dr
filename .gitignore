@@ -35,6 +35,10 @@ env/
 .conda/
 *.lock
 
+# Claude Code internals
+.agents/
+.claude/
+
 # editors
 .vscode/
 .idea/
