@@ -52,6 +52,7 @@ env/
 
 # outputs
 *.onnx
+!app_models/*.onnx
 wandb/
 mlruns/
 .coverage
