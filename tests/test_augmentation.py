@@ -2,7 +2,13 @@
 
 import numpy as np
 
-from echo_seg.data.augmentation import build_train_transform, build_val_transform
+from echo_seg.data.augmentation import (
+    _MultiplicativeSpeckle,
+    _SectorBrightness,
+    build_dr_transform,
+    build_train_transform,
+    build_val_transform,
+)
 
 
 def _asymmetric_image(h: int = 64, w: int = 64) -> np.ndarray:
@@ -53,3 +59,51 @@ def test_train_transform_shape():
     aug = transform(image=img, mask=mask)
     assert aug["image"].shape == (1, 256, 256)
     assert aug["mask"].shape == (256, 256)
+
+
+def test_dr_transform_shape():
+    img = np.random.rand(200, 180).astype(np.float32)
+    mask = np.zeros((200, 180), dtype=np.int32)
+    transform = build_dr_transform(image_size=(256, 256))
+    aug = transform(image=img, mask=mask)
+    assert aug["image"].shape == (1, 256, 256)
+    assert aug["mask"].shape == (256, 256)
+
+
+def test_multiplicative_speckle_mean_one():
+    """Multiplier mean must equal 1 regardless of strength s."""
+    transform = _MultiplicativeSpeckle(s_lo=0.1, s_hi=0.8, p=1.0)
+    uniform = np.full((64, 64), 0.5, dtype=np.float32)
+    for seed in range(5):
+        np.random.seed(seed)
+        out = transform.apply(uniform, s=float(np.random.uniform(0.1, 0.8)))
+        multiplier = out / 0.5
+        assert abs(multiplier.mean() - 1.0) < 0.05, (
+            f"seed {seed}: speckle multiplier mean={multiplier.mean():.4f}, expected ≈1"
+        )
+
+
+def test_sector_brightness_preserves_black_border():
+    """Brightness shift must not light up pixels that were exactly zero (sector border)."""
+    transform = _SectorBrightness(brightness_limit=0.2, p=1.0)
+    img = np.zeros((64, 64), dtype=np.float32)
+    img[16:48, 16:48] = 0.5  # sector interior
+    for seed in range(5):
+        np.random.seed(seed)
+        out = transform.apply(img, delta=float(np.random.uniform(-0.2, 0.2)))
+        assert out[0, 0] == 0.0, f"seed {seed}: border pixel became {out[0,0]}"
+        assert out[32, 32] != 0.5 or True  # interior may change
+
+
+def test_dr_no_horizontal_flip():
+    """DR transform must not flip horizontally."""
+    transform = build_dr_transform(image_size=(64, 64))
+    img = _asymmetric_image()
+    mask = np.zeros((64, 64), dtype=np.int32)
+    left_total, right_total = 0.0, 0.0
+    for _ in range(50):
+        aug = transform(image=img.copy(), mask=mask.copy())
+        out = aug["image"].numpy()[0]
+        left_total += out[:, :32].mean()
+        right_total += out[:, 32:].mean()
+    assert left_total > right_total

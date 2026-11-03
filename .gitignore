@@ -1,7 +1,7 @@
 # data (never commit)
-data/
-models/
-models.nosync/
+/data/
+/models/
+/models.nosync/
 !models.nosync/.gitkeep
 results/
 logs/
@@ -50,3 +50,5 @@ env/
 *.onnx
 wandb/
 mlruns/
+.coverage
+htmlcov/

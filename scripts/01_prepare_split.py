@@ -32,6 +32,7 @@ def main():
         seed=data_cfg["split_seed"],
         train_frac=data_cfg["train_fraction"],
         val_frac=data_cfg["val_fraction"],
+        logger=logger,
     )
     logger.info("Manifest written to %s", manifest_path)
     logger.info("Split counts: train=%d | val=%d | test=%d | skipped=%d",

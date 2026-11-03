@@ -11,7 +11,7 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader
 
-from echo_seg.data import CamusDataset, build_train_transform, build_val_transform
+from echo_seg.data import CamusDataset, build_dr_transform, build_train_transform, build_val_transform
 from echo_seg.models import build_model
 from echo_seg.utils import get_logger
 
@@ -50,12 +50,13 @@ def _dice_score_batch(logits: torch.Tensor, targets: torch.Tensor, num_classes: 
     return float(np.mean(scores))
 
 
-def train(cfg: dict, run_name: str = "baseline") -> Path:
+def train(cfg: dict, run_name: str = "baseline", train_transform=None) -> Path:
     """Train a U-Net and return the checkpoint path.
 
     Args:
-        cfg: loaded default.yaml contents
+        cfg: loaded YAML config
         run_name: subdirectory name under models_dir
+        train_transform: pre-built albumentations transform; if None, builds from cfg["augmentation"]
     """
     seed = cfg["training"]["seed"]
     _set_seed(seed)
@@ -72,10 +73,8 @@ def train(cfg: dict, run_name: str = "baseline") -> Path:
 
     img_size = tuple(cfg["data"]["image_size"])
     aug_cfg = cfg["augmentation"]
-    train_ds = CamusDataset(
-        cfg["output"]["manifest_path"],
-        "train",
-        transform=build_train_transform(
+    if train_transform is None:
+        train_transform = build_train_transform(
             image_size=img_size,
             rotation_limit=aug_cfg["rotation_limit"],
             shift_limit=aug_cfg["shift_limit"],
@@ -83,7 +82,11 @@ def train(cfg: dict, run_name: str = "baseline") -> Path:
             gamma_limit=tuple(aug_cfg["gamma_limit"]),
             brightness_limit=aug_cfg["brightness_limit"],
             noise_var_limit=tuple(aug_cfg["noise_var_limit"]),
-        ),
+        )
+    train_ds = CamusDataset(
+        cfg["output"]["manifest_path"],
+        "train",
+        transform=train_transform,
     )
     val_ds = CamusDataset(
         cfg["output"]["manifest_path"],
@@ -202,3 +205,23 @@ def train(cfg: dict, run_name: str = "baseline") -> Path:
 
     logger.info("Training complete. Best val Dice: %.4f | checkpoint: %s", best_val_dice, best_ckpt)
     return best_ckpt
+
+
+def train_dr(cfg: dict, run_name: str = "dr") -> Path:
+    """Train with physics-inspired DR augmentation; otherwise identical to train()."""
+    aug_cfg = cfg["augmentation"]
+    img_size = tuple(cfg["data"]["image_size"])
+    transform = build_dr_transform(
+        image_size=img_size,
+        rotation_limit=aug_cfg["rotation_limit"],
+        shift_limit=aug_cfg["shift_limit"],
+        scale_limit=aug_cfg["scale_limit"],
+        gamma_limit=tuple(aug_cfg["gamma_limit"]),
+        brightness_limit=aug_cfg["brightness_limit"],
+        speckle_s_range=tuple(aug_cfg["speckle_s_range"]),
+        blur_sigma_axial=tuple(aug_cfg["blur_sigma_axial"]),
+        blur_sigma_lateral=tuple(aug_cfg["blur_sigma_lateral"]),
+        attenuation_top=tuple(aug_cfg["attenuation_top"]),
+        attenuation_bot=tuple(aug_cfg["attenuation_bot"]),
+    )
+    return train(cfg, run_name=run_name, train_transform=transform)

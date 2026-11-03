@@ -56,6 +56,7 @@ def main():
         input_names=["image"],
         output_names=["logits"],
         dynamic_axes={"image": {0: "batch"}, "logits": {0: "batch"}},
+        dynamo=False,
     )
     logger.info("Exported ONNX model to %s", onnx_path)
 
