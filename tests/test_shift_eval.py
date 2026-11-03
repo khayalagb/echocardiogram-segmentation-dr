@@ -64,7 +64,7 @@ def test_corruptions_differ_from_input(img):
 
 def test_speckle_corr_multiplier_stats(img):
     """speckle_corr multiplier must have mean≈1, std≈0.30, and produce a visible shift."""
-    from echo_seg.evaluation.shift_eval import _speckle_corr
+    from echo_seg.corruptions import _speckle_corr
     # Use a uniform image so multiplier = output / input exactly
     uniform = torch.full_like(img, 0.5)
     np.random.seed(42)
@@ -78,7 +78,7 @@ def test_speckle_corr_multiplier_stats(img):
 
 def test_speckle_multiplier_mean(img):
     """speckle multiplier must have mean≈1 (Rayleigh σ=0.798 → mean≈1.0)."""
-    from echo_seg.evaluation.shift_eval import _speckle
+    from echo_seg.corruptions import _speckle
     uniform = torch.full_like(img, 0.5)
     np.random.seed(42)
     out = _speckle(uniform)
