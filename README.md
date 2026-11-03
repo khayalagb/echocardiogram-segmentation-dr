@@ -136,7 +136,9 @@ and bootstrap draws are in `results/shift_baseline_test_summary.json` and
 
 **Note on interpretation:** the baseline is robust to blur, attenuation, gain, and low-resolution
 conditions; differences versus the DR arm on those conditions are below 0.01 Dice and are not
-claimed here. Uncorrelated speckle (`speckle`) degrades the baseline substantially (LV −0.06,
+claimed here. The held-out `low_res` condition shows no clear DR gain: Δ LV +0.007
+(CI −0.001 to +0.014), Myo +0.006 (CI 0.000 to +0.012), LA +0.001; all CIs include or
+nearly include zero. Uncorrelated speckle (`speckle`) degrades the baseline substantially (LV −0.06,
 Myo −0.11, LA −0.12 versus clean); the DR augmentation set (Rayleigh speckle, anisotropic blur,
 depth-attenuation ramp, wider gain/gamma range) closes this gap. `speckle_corr` is spatially
 correlated speckle of similar amplitude, not used in training by either arm; the baseline drops
