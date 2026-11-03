@@ -14,8 +14,6 @@ Bootstrap 95% CIs over 1 000 resamples (patient-level test split, n=75 patients)
 | Myocardium | 0.874 (0.869–0.880) | 1.73 (1.61–1.87) |
 | Left atrium | 0.899 (0.889–0.908) | 2.16 (1.94–2.39) |
 
-Risk-coverage curves and per-structure analysis: `results/test_risk_coverage.png`
-
 **Provenance.** The baseline checkpoint dates from 28 Oct 2026; the reason for the retrain was not recorded. Val and test were both evaluated that day, before the robustness study. All robustness-study design decisions (corruptions, severities, DR ranges) were made using the validation split only.
 
 ## Setup
@@ -185,9 +183,16 @@ jupyter notebook notebooks/04_robustness_analysis.ipynb
 
 Run `streamlit run app.py`. Upload a grayscale apical echo frame, select a corruption condition from the sidebar, and compare baseline vs DR segmentation side by side.
 
-![Demo: speckle_corr condition — baseline fails, DR segments correctly](docs/demo.png)
+**Note:** the app requires ONNX model files, which are not committed to this repository (`.onnx` is gitignored). Generate them before running:
 
-*Spatially-correlated speckle (held-out condition). Baseline produces no segmentation; DR retains correct delineation of all three structures.*
+```bash
+python scripts/06_export_onnx.py --checkpoint models.nosync/baseline/best.pth
+python scripts/06_export_onnx.py --checkpoint models.nosync/dr/best.pth
+```
+
+![Baseline vs DR mean Dice per corruption condition on the held-out test split](docs/demo.png)
+
+*Mean Dice on the held-out test split (75 patients). One illustrative example, not a typical case; averages are in the results table.*
 
 ## Limitations
 
@@ -212,9 +217,14 @@ tests/            pytest tests (split leak, metrics, augmentation)
 
 ## Citation
 
+CAMUS dataset (CC BY-NC-SA 4.0):
+
 ```
-Leclerc S. et al. Deep learning for segmentation using an open large-scale dataset
-in 2D echocardiography. IEEE TMI, 2019.
+S. Leclerc, E. Smistad, J. Pedrosa, A. Ostvik, et al.
+"Deep Learning for Segmentation using an Open Large-Scale Dataset in 2D
+Echocardiography" in IEEE Transactions on Medical Imaging, vol. 38, no. 9,
+pp. 2198-2210, Sept. 2019.
+doi: 10.1109/TMI.2019.2900516
 ```
 
 ---
