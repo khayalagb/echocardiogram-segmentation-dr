@@ -185,6 +185,8 @@ Run `streamlit run app.py`. Upload a grayscale apical echo frame, select a corru
 
 **Note:** the app requires ONNX model files, which are not committed to this repository (`.onnx` is gitignored). Generate them before running:
 
+Uploaded PNG/JPEG screenshots differ from the NIfTI data used in evaluation (8-bit quantisation, unknown pixel spacing), so the demo is qualitative only.
+
 ```bash
 python scripts/06_export_onnx.py --checkpoint models.nosync/baseline/best.pth
 python scripts/06_export_onnx.py --checkpoint models.nosync/dr/best.pth
