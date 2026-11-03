@@ -1,6 +1,6 @@
 # Echocardiogram Segmentation on CAMUS
 
-2D segmentation of LV cavity, myocardium, and left atrium on apical echocardiograms from the [CAMUS](https://www.creatis.insa-lyon.fr/Challenge/camus/) dataset. Emphasis on leak-free evaluation, patient-level confidence intervals, stratified failure analysis, and ensemble-based uncertainty.
+2D segmentation of LV cavity, myocardium, and left atrium on apical echocardiograms from the [CAMUS](https://www.creatis.insa-lyon.fr/Challenge/camus/) dataset. Emphasis on leak-free evaluation, patient-level confidence intervals, stratified failure analysis, and robustness to acquisition-domain shift.
 
 > Research and demonstration only. Not a medical device.
 
@@ -181,12 +181,20 @@ jupyter notebook notebooks/04_robustness_analysis.ipynb
 
 ---
 
+## Demo
+
+Run `streamlit run app.py`. Upload a grayscale apical echo frame, select a corruption condition from the sidebar, and compare baseline vs DR segmentation side by side.
+
+![Demo: speckle_corr condition — baseline fails, DR segments correctly](docs/demo.png)
+
+*Spatially-correlated speckle (held-out condition). Baseline produces no segmentation; DR retains correct delineation of all three structures.*
+
 ## Limitations
 
 - Single dataset (one centre, one scanner vendor). Generalisation to other devices is not demonstrated.
 - Test set of ~75 patients yields wide confidence intervals; thresholds are stated post-hoc.
-- Augmentation diversity is limited; speckle simulation uses additive Gaussian noise, not a physical model.
-- Ensemble members share the same architecture and data; they underestimate epistemic uncertainty relative to architecture-diverse ensembles.
+- One training seed per arm; arm differences cannot be attributed to augmentation strategy alone.
+- Corruptions are synthetic; results on real cross-device images may differ.
 
 ## Structure
 
@@ -208,3 +216,7 @@ tests/            pytest tests (split leak, metrics, augmentation)
 Leclerc S. et al. Deep learning for segmentation using an open large-scale dataset
 in 2D echocardiography. IEEE TMI, 2019.
 ```
+
+---
+
+*Portfolio project by [Khayala Gaybaliyeva](https://linkedin.com/in/khayala-gaybaliyeva) — ResNet34 U-Net segmentation on CAMUS with physics-inspired domain randomisation and patient-level robustness evaluation.*
