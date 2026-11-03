@@ -181,7 +181,7 @@ jupyter notebook notebooks/04_robustness_analysis.ipynb
 
 ## Demo
 
-Run `streamlit run app.py`. Upload a grayscale apical echo frame, select a corruption condition from the sidebar, and compare baseline vs DR segmentation side by side.
+Run `streamlit run app.py`. Upload a grayscale apical echo frame, select a corruption condition from the sidebar, and compare baseline vs DR segmentation side by side. The study results are in the tables above. The app is a qualitative demo: models were trained on CAMUS only, and segmentations may be poor on images unlike CAMUS (for example synthetic or non-echo images).
 
 **Note:** the app requires ONNX model files, which are not committed to this repository (`.onnx` is gitignored). Generate them before running:
 
